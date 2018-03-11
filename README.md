@@ -1,6 +1,14 @@
 # DeathByCaptcha-CLI
 A CLI client for the DeathByCaptcha API
 
+## Installation
+
+```console
+$ git clone https://github.com/SkullTech/DeathByCaptcha-CLI.git
+$ cd DeathByCaptcha-CLI
+$ pip3 install -r requirements.txt
+```
+
 ## Usage
 
 ```console
