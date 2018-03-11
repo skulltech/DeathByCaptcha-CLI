@@ -1,38 +1,44 @@
 import sys
+import argparse
+import yaml
 import deathbycaptcha
 
 
-# Default CAPTCHA timeout and decode() polling interval
 DEFAULT_TIMEOUT = 60
 POLLS_INTERVAL = 5
 
-def main():
-    
-    # sys.argv[1] will be the DBC account username and sys.argv[2] will be the account password
-    client = deathbycaptcha.SocketClient(sys.argv[1], sys.argv[2])
+
+def solve_captcha(username, password, file, type):
+    client = deathbycaptcha.SocketClient(username, password)
     client.is_verbose = False
 
-    # Printing the balance in the DBC account
-    print ('Your balance is {} US cents'.format(client.get_balance()))
     try:
-        for fn in sys.argv[3:]:
-            try:
-                # CAPTCHA image file name in sys.argv[3:]
-                # DEFAULT TIMEOUT : the timeout
-                captcha = client.decode(fn, DEFAULT_TIMEOUT)
-            except Exception as e:
-                sys.stderr.write('Failed uploading CAPTCHA: {}\n'.format(e))
-                captcha = None
-
-            if captcha:
-                print('CAPTCHA {} solved: {}'.format(captcha['captcha'], captcha['text']))
-                try:
-                    client.report(captcha['captcha'])
-                except Exception as e:
-                    sys.stderr.write('Failed reporting CAPTCHA: {}\n'.format(e))
-
+        print ('[*] Your balance is {} US cents'.format(client.get_balance()))
+        captcha = client.decode(file, DEFAULT_TIMEOUT, type=type)
+        if captcha:
+            print ('[*] CAPTCHA {} solved: {}'.format(captcha['captcha'], captcha['text']))
     except deathbycaptcha.AccessDeniedException:
-        print('AccesDeniedException : Access to DBC API denied, check your credentials and/or balance')
+        print ('[*] AccesDeniedException: Access to DBC API denied, check your credentials and/or balance')
+
+    return captcha['text']
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('type', help='Which type of CAPTCHA', type=str, choices=['text', 'image'])
+    parser.add_argument('file', help='Filename of CAPTCHA image', type=str)
+    args = parser.parse_args()
+
+    with open('creds.yaml') as file:
+        creds = yaml.load(file)
+    username = creds['DBCAPI']['USERNAME']
+    password = creds['DBCAPI']['PASSWORD']
+
+    if args.type=='text': typ = 0
+    else:                 typ = 2
+
+    solve_captcha(username, password, args.file, typ)
+
 
 
 if __name__=='__main__':
